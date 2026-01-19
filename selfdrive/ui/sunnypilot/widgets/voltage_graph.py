@@ -25,12 +25,12 @@ class VoltageReading:
 class VoltageHistory:
   """
   Records voltage readings after engine-off for visualization.
-  Stores readings in a circular buffer for the last N minutes.
+  Stores readings in a circular buffer until the shutoff limit.
   """
-  # Maximum history duration in seconds (30 minutes)
-  MAX_HISTORY_DURATION_S = 30 * 60
-  # Sample interval in seconds (record every 2 seconds to reduce memory usage)
-  SAMPLE_INTERVAL_S = 2.0
+  # Maximum history duration in seconds (30 hours - matches MAX_TIME_OFFROAD_S)
+  MAX_HISTORY_DURATION_S = 30 * 60 * 60
+  # Sample interval in seconds (record every 30 seconds for long-term monitoring)
+  SAMPLE_INTERVAL_S = 30.0
 
   def __init__(self):
     # Use deque with no maxlen - we'll trim based on time
