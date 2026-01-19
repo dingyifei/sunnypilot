@@ -117,6 +117,8 @@ class UIState(UIStateSP):
       self.update_params()
     device.update()
     UIStateSP.update(self)
+    # Update voltage recording for offroad voltage graph
+    self.update_voltage_recording(self.sm, self.started)
 
   def _update_state(self) -> None:
     # Handle panda states updates

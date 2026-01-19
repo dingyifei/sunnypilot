@@ -10,7 +10,7 @@ from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.sunnypilot.widgets.list_view import option_item_sp, multiple_button_item_sp, button_item_sp, \
-  dual_button_item_sp, Spacer
+  dual_button_item_sp, Spacer, VoltageGraphItem
 from openpilot.system.ui.widgets import DialogResult
 from openpilot.system.ui.widgets.button import ButtonStyle
 from openpilot.system.ui.widgets.confirm_dialog import alert_dialog, ConfirmDialog
@@ -37,9 +37,14 @@ class DeviceLayoutSP(DeviceLayout):
   def __init__(self):
     DeviceLayout.__init__(self)
     self._scroller._line_separator = None
+    self._voltage_graph_item = None
 
   def _initialize_items(self):
     DeviceLayout._initialize_items(self)
+
+    # Create voltage graph item (only shown when offroad)
+    self._voltage_graph_item = VoltageGraphItem(voltage_getter=lambda: ui_state.car_voltage_mv)
+    self._voltage_graph_item.set_visible(lambda: ui_state.is_offroad())
 
     # Using dual button with no right button for better alignment
     self._always_offroad_btn = dual_button_item_sp(
@@ -121,6 +126,9 @@ class DeviceLayoutSP(DeviceLayout):
       self._device_wake_mode,
       LineSeparator(),
       self._max_time_offroad,
+      LineSeparator(height=10),
+      # Voltage graph - only visible when offroad
+      self._voltage_graph_item,
       LineSeparator(height=10),
       self._quiet_mode_and_dcam,
       self._reg_and_training,

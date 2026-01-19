@@ -10,6 +10,7 @@ import pyray as rl
 from openpilot.common.params import Params
 from openpilot.system.ui.lib.application import gui_app, MousePos, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
+from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.sunnypilot.widgets.toggle import ToggleSP
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
@@ -19,6 +20,7 @@ from openpilot.system.ui.widgets.list_view import ListItem, ToggleAction, ItemAc
 from openpilot.system.ui.widgets.scroller_tici import LineSeparator, LINE_COLOR, LINE_PADDING
 from openpilot.system.ui.sunnypilot.lib.styles import style
 from openpilot.system.ui.sunnypilot.widgets.option_control import OptionControlSP, LABEL_WIDTH
+from openpilot.selfdrive.ui.sunnypilot.widgets.voltage_graph import VoltageGraphWidget, voltage_history
 
 
 class Spacer(Widget):
@@ -368,3 +370,53 @@ class LineSeparatorSP(LineSeparator):
     rl.draw_line(int(self._rect.x) + LINE_PADDING, line_y,
                  int(self._rect.x + self._rect.width) - LINE_PADDING, line_y,
                  LINE_COLOR)
+
+
+class VoltageGraphItem(Widget):
+  """
+  A list item widget that displays the voltage graph when offroad.
+  Shows battery voltage over time since engine was turned off.
+  """
+  GRAPH_HEIGHT = 220
+  TITLE_HEIGHT = 50
+  TOTAL_HEIGHT = GRAPH_HEIGHT + TITLE_HEIGHT + 20  # padding
+
+  def __init__(self, voltage_getter: Callable[[], int]):
+    super().__init__()
+    self._voltage_getter = voltage_getter
+    self._graph = VoltageGraphWidget(voltage_history, height=self.GRAPH_HEIGHT)
+    self._font = gui_app.font(FontWeight.SEMI_BOLD)
+    self._rect = rl.Rectangle(0, 0, 0, self.TOTAL_HEIGHT)
+
+  def set_parent_rect(self, parent_rect: rl.Rectangle) -> None:
+    super().set_parent_rect(parent_rect)
+    self._rect.width = parent_rect.width
+
+  def _update_state(self):
+    # Update the graph with current voltage
+    self._graph.set_current_voltage(self._voltage_getter())
+
+  def _render(self, _) -> None:
+    if not self.is_visible:
+      return
+
+    # Don't draw if not in parent's viewport
+    if self._parent_rect and ((self._rect.y + self._rect.height) <= self._parent_rect.y or
+                               self._rect.y >= (self._parent_rect.y + self._parent_rect.height)):
+      return
+
+    # Draw title
+    title = tr("Battery Voltage (Engine Off)")
+    title_size = measure_text_cached(self._font, title, 40)
+    title_x = self._rect.x + (self._rect.width - title_size.x) / 2
+    title_y = self._rect.y + 10
+    rl.draw_text_ex(self._font, title, rl.Vector2(title_x, title_y), 40, 0, style.ITEM_TEXT_COLOR)
+
+    # Draw the graph
+    graph_rect = rl.Rectangle(
+      self._rect.x + style.ITEM_PADDING,
+      self._rect.y + self.TITLE_HEIGHT,
+      self._rect.width - style.ITEM_PADDING * 2,
+      self.GRAPH_HEIGHT
+    )
+    self._graph.render(graph_rect)
