@@ -101,6 +101,14 @@ class Uploader:
       if any(name.endswith(".lock") for name in names):
         continue
 
+      # Skip offroad recordings (marked with .offroad file in route directory)
+      # logdir format: {route_id}--{segment_num}, route_id format: {hex}--{hex}
+      parts = logdir.rsplit("--", 1)
+      if len(parts) == 2 and parts[1].isdigit():
+        route_dir = os.path.join(self.root, parts[0])
+        if os.path.exists(os.path.join(route_dir, ".offroad")):
+          continue
+
       for name in sorted(names, key=lambda n: self.immediate_priority.get(n, 1000)):
         key = os.path.join(logdir, name)
         fn = os.path.join(path, name)

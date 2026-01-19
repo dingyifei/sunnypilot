@@ -14,7 +14,8 @@
 ExitHandler do_exit;
 
 struct LoggerdState {
-  LoggerState logger;
+  // Skip rlog during offroad recording to save space
+  LoggerState logger{Path::log_root(), is_offroad_recording()};
   std::atomic<double> last_camera_seen_tms{0.0};
   std::atomic<int> ready_to_rotate{0};  // count of encoders ready to rotate
   int max_waiting = 0;

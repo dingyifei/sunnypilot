@@ -163,21 +163,27 @@ static void log_sentinel(LoggerState *log, SentinelType type, int exit_signal = 
   log->write(msg.toBytes(), true);
 }
 
-LoggerState::LoggerState(const std::string &log_root) {
+LoggerState::LoggerState(const std::string &log_root, bool skip_rlog_) : skip_rlog(skip_rlog_) {
   route_name = logger_get_identifier("RouteCount");
   route_path = log_root + "/" + route_name;
   init_data = logger_build_init_data();
+
+  // Create marker file to prevent upload of offroad recordings
+  if (skip_rlog) {
+    util::create_directories(route_path, 0775);
+    std::ofstream{route_path + "/.offroad"};
+  }
 }
 
 LoggerState::~LoggerState() {
-  if (rlog) {
+  if (rlog || qlog) {
     log_sentinel(this, SentinelType::END_OF_ROUTE, exit_signal);
     std::remove(lock_file.c_str());
   }
 }
 
 bool LoggerState::next() {
-  if (rlog) {
+  if (rlog || qlog) {
     log_sentinel(this, SentinelType::END_OF_SEGMENT);
     std::remove(lock_file.c_str());
   }
@@ -189,7 +195,10 @@ bool LoggerState::next() {
   lock_file = segment_path + "/rlog.lock";
   std::ofstream{lock_file};
 
-  rlog.reset(new ZstdFileWriter(segment_path + "/rlog.zst", LOG_COMPRESSION_LEVEL));
+  // Skip rlog during offroad recording to save space
+  if (!skip_rlog) {
+    rlog.reset(new ZstdFileWriter(segment_path + "/rlog.zst", LOG_COMPRESSION_LEVEL));
+  }
   qlog.reset(new ZstdFileWriter(segment_path + "/qlog.zst", LOG_COMPRESSION_LEVEL));
 
   // log init data & sentinel type.
@@ -199,6 +208,6 @@ bool LoggerState::next() {
 }
 
 void LoggerState::write(uint8_t* data, size_t size, bool in_qlog) {
-  rlog->write(data, size);
+  if (rlog) rlog->write(data, size);
   if (in_qlog) qlog->write(data, size);
 }
