@@ -16,11 +16,12 @@ MASTER_SP_BRANCHES = ['master']
 RELEASE_BRANCHES = ['release-tizi-staging', 'release-mici-staging', 'release-tizi', 'release-mici', 'nightly']
 TESTED_BRANCHES = RELEASE_BRANCHES + ['devel-staging', 'nightly-dev'] + RELEASE_SP_BRANCHES + TESTED_SP_BRANCHES
 
+# sunnypilot: TICI (Comma 3) now uses the same branches as TIZI (Comma 3X)
+# Both devices share the same SDM845 SoC with identical compute capabilities
 SP_BRANCH_MIGRATIONS = {
-  ("tici", "staging-c3-new"): "staging-tici",
-  ("tici", "dev-c3-new"): "staging-tici",
-  ("tici", "master"): "master-tici",
-  ("tici", "master-dev-c3-new"): "master-tici",
+  ("tici", "staging-c3-new"): "staging",
+  ("tici", "dev-c3-new"): "dev",
+  ("tici", "master-dev-c3-new"): "master-dev",
   ("tizi", "staging-c3-new"): "staging",
   ("tizi", "dev-c3-new"): "dev",
   ("tizi", "master-dev-c3-new"): "master-dev",
