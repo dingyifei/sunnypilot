@@ -35,6 +35,7 @@ DESCRIPTIONS = {
   'RecordFront': tr_noop("Upload data from the driver facing camera and help improve the driver monitoring algorithm."),
   "IsMetric": tr_noop("Display speed in km/h instead of mph."),
   "RecordAudio": tr_noop("Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect."),
+  "RecordOffroad": tr_noop("Record wide road camera, driver camera, and audio while offroad (parked). IR emitter auto-adjusts for driver camera in low light. Useful for dashcam monitoring while parked."),
 }
 
 
@@ -86,6 +87,12 @@ class TogglesLayout(Widget):
         lambda: tr("Record and Upload Microphone Audio"),
         DESCRIPTIONS["RecordAudio"],
         "microphone.png",
+        True,
+      ),
+      "RecordOffroad": (
+        lambda: tr("Record While Offroad"),
+        DESCRIPTIONS["RecordOffroad"],
+        "eye_open.png",
         True,
       ),
       "IsMetric": (

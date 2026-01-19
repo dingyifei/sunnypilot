@@ -61,6 +61,9 @@ def only_onroad(started: bool, params: Params, CP: car.CarParams) -> bool:
 def only_offroad(started: bool, params: Params, CP: car.CarParams) -> bool:
   return not started
 
+def offroad_recording(started: bool, params: Params, CP: car.CarParams) -> bool:
+  return not started and params.get_bool("RecordOffroad")
+
 def use_github_runner(started, params, CP: car.CarParams) -> bool:
   return not PC and params.get_bool("EnableGithubRunner") and (
     not params.get_bool("NetworkMetered") and not params.get_bool("GithubRunnerSufficientVoltage"))
@@ -110,16 +113,16 @@ def and_(*fns):
 procs = [
   DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),
 
-  NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging),
-  NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad),
+  NativeProcess("loggerd", "system/loggerd", ["./loggerd"], or_(logging, offroad_recording)),
+  NativeProcess("encoderd", "system/loggerd", ["./encoderd"], or_(only_onroad, offroad_recording)),
   NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], notcar),
   PythonProcess("logmessaged", "system.logmessaged", always_run),
 
-  NativeProcess("camerad", "system/camerad", ["./camerad"], driverview, enabled=not WEBCAM),
-  PythonProcess("webcamerad", "tools.webcam.camerad", driverview, enabled=WEBCAM),
+  NativeProcess("camerad", "system/camerad", ["./camerad"], or_(driverview, offroad_recording), enabled=not WEBCAM),
+  PythonProcess("webcamerad", "tools.webcam.camerad", or_(driverview, offroad_recording), enabled=WEBCAM),
   PythonProcess("proclogd", "system.proclogd", only_onroad, enabled=platform.system() != "Darwin"),
   PythonProcess("journald", "system.journald", only_onroad, platform.system() != "Darwin"),
-  PythonProcess("micd", "system.micd", iscar),
+  PythonProcess("micd", "system.micd", or_(iscar, offroad_recording)),
   PythonProcess("timed", "system.timed", always_run, enabled=not PC),
 
   PythonProcess("modeld", "selfdrive.modeld.modeld", and_(only_onroad, is_stock_model)),

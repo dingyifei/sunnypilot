@@ -934,6 +934,10 @@
     "title": "Record Front Lock",
     "description": ""
   },
+  "RecordOffroad": {
+    "title": "Record While Offroad",
+    "description": "Record wide road camera, driver camera, and audio while offroad (parked). Uses IR emitter for driver camera in low light."
+  },
   "RoadName": {
     "title": "Road Name",
     "description": ""

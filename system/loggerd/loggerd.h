@@ -77,10 +77,16 @@ public:
   std::vector<EncoderInfo> encoder_infos;
 };
 
+// Helper to check if in offroad recording mode
+inline bool is_offroad_recording() {
+  return Params().getBool("IsOffroad") && Params().getBool("RecordOffroad");
+}
+
 const EncoderInfo main_road_encoder_info = {
   .publish_name = "roadEncodeData",
   .thumbnail_name = "thumbnail",
   .filename = "fcamera.hevc",
+  .record = !is_offroad_recording(),  // Don't record road camera during offroad recording
   .get_settings = [](int in_width){return EncoderSettings::MainEncoderSettings(in_width);},
   INIT_ENCODE_FUNCTIONS(RoadEncode),
 };
@@ -95,7 +101,7 @@ const EncoderInfo main_wide_road_encoder_info = {
 const EncoderInfo main_driver_encoder_info = {
   .publish_name = "driverEncodeData",
   .filename = "dcamera.hevc",
-  .record = Params().getBool("RecordFront"),
+  .record = Params().getBool("RecordFront") || is_offroad_recording(),  // Always record during offroad recording
   .get_settings = [](int in_width){return EncoderSettings::MainEncoderSettings(in_width);},
   INIT_ENCODE_FUNCTIONS(DriverEncode),
 };
@@ -128,7 +134,7 @@ const EncoderInfo qcam_encoder_info = {
   .get_settings = [](int){return EncoderSettings::QcamEncoderSettings();},
   .frame_width = 526,
   .frame_height = 330,
-  .include_audio = Params().getBool("RecordAudio"),
+  .include_audio = Params().getBool("RecordAudio") || is_offroad_recording(),  // Always record audio during offroad recording
   INIT_ENCODE_FUNCTIONS(QRoadEncode),
 };
 
