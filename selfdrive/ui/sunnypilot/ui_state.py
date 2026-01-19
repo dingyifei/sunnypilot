@@ -7,6 +7,7 @@ See the LICENSE.md file in the root directory for more details.
 from cereal import messaging, log, custom
 from openpilot.common.params import Params
 from openpilot.sunnypilot.sunnylink.sunnylink_state import SunnylinkState
+from openpilot.selfdrive.ui.sunnypilot.widgets.voltage_graph import voltage_history
 
 OpenpilotState = log.SelfdriveState.OpenpilotState
 MADSState = custom.ModularAssistiveDrivingSystem.ModularAssistiveDrivingSystemState
@@ -17,18 +18,43 @@ class UIStateSP:
     self.params = Params()
     self.sm_services_ext = [
       "modelManagerSP", "selfdriveStateSP", "longitudinalPlanSP", "backupManagerSP",
-      "gpsLocation", "liveTorqueParameters", "carStateSP", "liveMapDataSP", "carParamsSP", "liveDelay"
+      "gpsLocation", "liveTorqueParameters", "carStateSP", "liveMapDataSP", "carParamsSP", "liveDelay",
+      "peripheralState"
     ]
 
     self.sunnylink_state = SunnylinkState()
 
     self.custom_interactive_timeout: int = self.params.get("InteractivityTimeout", return_default=True)
+    self.car_voltage_mv: int = 12000  # Default 12V
+    self._was_started: bool = False
 
   def update(self) -> None:
     if self.sunnylink_enabled:
       self.sunnylink_state.start()
     else:
       self.sunnylink_state.stop()
+
+  def update_voltage_recording(self, sm, started: bool) -> None:
+    """Update voltage recording based on offroad/onroad state."""
+    # Update voltage from peripheralState
+    if sm.updated["peripheralState"]:
+      peripheral = sm["peripheralState"]
+      if peripheral.pandaType != log.PandaState.PandaType.unknown:
+        self.car_voltage_mv = peripheral.voltage
+
+    # Handle recording state transitions
+    if started and not self._was_started:
+      # Just went onroad - stop recording
+      voltage_history.stop_recording()
+    elif not started and self._was_started:
+      # Just went offroad - start recording
+      voltage_history.start_recording()
+
+    self._was_started = started
+
+    # Record voltage if offroad
+    if not started and self.car_voltage_mv > 0:
+      voltage_history.add_reading(self.car_voltage_mv)
 
   @staticmethod
   def update_status(ss, ss_sp, onroad_evt) -> str:
